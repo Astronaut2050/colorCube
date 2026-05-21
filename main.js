@@ -1,6 +1,6 @@
-﻿const COLS = 8;
-const ROWS = 20;
-const BLOCK_SIZE = 40;
+const COLS = 7;
+const ROWS = 11;
+const BLOCK_SIZE = 52;
 
 const GREEN_LEVELS = [
   "#eef3d8",
@@ -15,6 +15,9 @@ const LEVEL_SCORES = [1, 2, 3, 4, 5];
 const canvas = document.getElementById("game-canvas");
 const ctx = canvas.getContext("2d");
 const scoreEl = document.getElementById("score");
+const startPage = document.getElementById("start-page");
+const startBtn = document.getElementById("start-btn");
+const startSettingsBtn = document.getElementById("start-settings-btn");
 const overlay = document.getElementById("overlay");
 const overlayTitle = document.getElementById("overlay-title");
 const overlaySubtitle = document.getElementById("overlay-subtitle");
@@ -35,6 +38,7 @@ let dropInterval = 520;
 let lastDropTime = 0;
 let isPaused = false;
 let isGameOver = false;
+let gameStarted = false;
 let currentFallProgress = 0;
 
 const mergeAnimations = [];
@@ -227,14 +231,16 @@ function restartGame() {
   score = 0;
   isGameOver = false;
   isPaused = false;
+  gameStarted = false;
   currentFallProgress = 0;
   lastDropTime = 0;
   mergeAnimations.length = 0;
-  statusText.textContent = "进行中";
+  statusText.textContent = "就绪";
   overlay.classList.add("hidden");
   restartBtn.classList.add("hidden");
-  spawnNewPiece();
+  startPage.classList.remove("hidden");
   updateScore();
+  render();
 }
 
 function updateScore() {
@@ -338,7 +344,13 @@ function render() {
 }
 
 function update(time) {
-  if (!isPaused && !isGameOver) {
+  if (!gameStarted || (!isPaused && !isGameOver)) {
+    if (!gameStarted) {
+      render();
+      requestAnimationFrame(update);
+      return;
+    }
+
     if (!lastDropTime) {
       lastDropTime = time;
     }
@@ -405,10 +417,32 @@ function closeSettings() {
   settingsPanel.setAttribute("aria-hidden", "true");
 }
 
+function startGame() {
+  gameStarted = true;
+  startPage.classList.add("hidden");
+  statusText.textContent = "进行中";
+  isGameOver = false;
+  isPaused = false;
+  lastDropTime = 0;
+  currentFallProgress = 0;
+  mergeAnimations.length = 0;
+  board = createEmptyBoard();
+  score = 0;
+  updateScore();
+  overlay.classList.add("hidden");
+  restartBtn.classList.add("hidden");
+  spawnNewPiece();
+  lastDropTime = performance.now();
+}
+
 document.addEventListener("keydown", (event) => {
   if (!settingsPanel.classList.contains("hidden") && event.key === "Escape") {
     event.preventDefault();
     closeSettings();
+    return;
+  }
+
+  if (!gameStarted) {
     return;
   }
 
@@ -433,6 +467,8 @@ document.addEventListener("keydown", (event) => {
 });
 
 restartBtn.addEventListener("click", restartGame);
+startBtn.addEventListener("click", startGame);
+startSettingsBtn.addEventListener("click", openSettings);
 settingsBtn.addEventListener("click", openSettings);
 
 settingsBackdrop.addEventListener("click", closeSettings);
@@ -454,8 +490,9 @@ tabControls.addEventListener("click", () => {
 function init() {
   canvas.width = COLS * BLOCK_SIZE;
   canvas.height = ROWS * BLOCK_SIZE;
-  spawnNewPiece();
+  statusText.textContent = "就绪";
   updateScore();
+  render();
   requestAnimationFrame(update);
 }
 
