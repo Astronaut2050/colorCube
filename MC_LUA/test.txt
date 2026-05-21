@@ -1,0 +1,224 @@
+-- 天花板基准方块
+local CEILING_BLOCK = $blockState(Ceiling Block, stone)$
+
+-- 四种方块及其权重（0~100）
+local LAMP1 = $blockState(Lamp 1, glowstone)$
+local LAMP1_WEIGHT = $int(Lamp 1 Weight, 24, 0, 100)$
+
+local LAMP2 = $blockState(Lamp 2, shroomlight)$
+local LAMP2_WEIGHT = $int(Lamp 2 Weight, 12, 0, 100)$
+
+local LAMP3 = $blockState(Lamp 3, sea_lantern)$
+local LAMP3_WEIGHT = $int(Lamp 3 Weight, 9, 0, 100)$
+
+local LAMP4 = $blockState(Lamp 4, air)$
+local LAMP4_WEIGHT = $int(Lamp 4 Weight, 40, 0, 100)$
+
+-- 灯带控制：启用与长度
+local ENABLE_Z_STRIP = $boolean(Enable X Strip, false)$
+local Z_STRIP_LENGTH = $int(X Strip Length, 2, 1, 5)$
+
+local ENABLE_X_STRIP = $boolean(Enable Z Strip, false)$
+local X_STRIP_LENGTH = $int(Z Strip Length, 5, 1, 5)$
+
+
+
+
+-- 按权重选择一个方块：概率 = LAMPX_WEIGHT / (总和)
+local function pick_lamp()
+    local w1 = LAMP1_WEIGHT
+    local w2 = LAMP2_WEIGHT
+    local w3 = LAMP3_WEIGHT
+    local w4 = LAMP4_WEIGHT
+
+    local total = w1 + w2 + w3 + w4
+    if total <= 0 then
+        return LAMP4
+    end
+
+    -- 随机数 r ∈ [0, total)
+    local r = math.random() * total
+
+    if r < w1 then
+        return LAMP1
+    elseif r < w1 + w2 then
+        return LAMP2
+    elseif r < w1 + w2 + w3 then
+        return LAMP3
+    else
+        return LAMP4
+    end
+end
+
+-- 当前位置的 BlockState（与 $blockState 参数对齐）
+local current = getBlockState(x, y, z)
+
+-- 当前是天花板基准方块时，根据灯带设置在正下方生成一条灯带或单个方块
+if current == CEILING_BLOCK then
+    local belowY = y - 1
+    if belowY >= 0 then
+        -- 如果两种灯带都关闭：只在正下方生成 1 个方块
+        if not ENABLE_X_STRIP and not ENABLE_Z_STRIP then
+            local belowBlock = getBlock(x, belowY, z)
+            if belowBlock == blocks.air then
+                setBlock(x, belowY, z, pick_lamp())
+            end
+            return current
+        end
+
+        -- 启用 X 灯带：在 X 方向生成一条、宽度为 1 的灯带
+        if ENABLE_X_STRIP then
+            for dx = -(X_STRIP_LENGTH - 1), 0 do
+                local tx = x + dx
+                local belowBlock = getBlock(tx, belowY, z)
+                if belowBlock == blocks.air then
+                    setBlock(tx, belowY, z, pick_lamp())
+                end
+            end
+        end
+
+        -- 启用 Z 灯带：在 Z 方向生成一条、宽度为 1 的灯带
+        if ENABLE_Z_STRIP then
+            for dz = 0, (Z_STRIP_LENGTH - 1) do
+                local tz = z + dz
+                local belowBlock = getBlock(x, belowY, tz)
+                if belowBlock == blocks.air then
+                    setBlock(x, belowY, tz, pick_lamp())
+                end
+            end
+        end
+    end
+end
+
+-- 始终返回当前位置原方块
+return current
+
+-- ------------------------------------------------------------------------------------------------
+
+
+-- 天花板基准方块
+local CEILING_BLOCK = $blockState(Ceiling Block, stone)$
+
+-- 四种方块及其权重（0~100）
+local LAMP1 = $blockState(Lamp 1, glowstone)$
+local LAMP1_WEIGHT = $int(Lamp 1 Weight, 24, 0, 100)$
+
+local LAMP2 = $blockState(Lamp 2, shroomlight)$
+local LAMP2_WEIGHT = $int(Lamp 2 Weight, 12, 0, 100)$
+
+local LAMP3 = $blockState(Lamp 3, sea_lantern)$
+local LAMP3_WEIGHT = $int(Lamp 3 Weight, 9, 0, 100)$
+
+local LAMP4 = $blockState(Lamp 4, air)$
+local LAMP4_WEIGHT = $int(Lamp 4 Weight, 40, 0, 100)$
+
+-- 灯带控制：启用、长度与步长
+local ENABLE_X_STRIP = $boolean(Enable X Strip, false)$
+local X_STRIP_LENGTH = $int(X Strip Length, 2, 1, 5)$
+local X_STRIP_STEP   = $int(X Strip Step, 1, 1, 5)$
+
+local ENABLE_Z_STRIP = $boolean(Enable Z Strip, false)$
+local Z_STRIP_LENGTH = $int(Z Strip Length, 2, 1, 5)$
+local Z_STRIP_STEP   = $int(Z Strip Step, 1, 1, 5)$
+
+-- 退界设置：目标方块与退界长度
+local RETREAT_BLOCK  = $blockState(Retreat Block, stone)$
+local RETREAT_LENGTH = $int(Retreat Length, 1, 1, 5)$
+
+
+-- 按权重选择一个方块：概率 = LAMPX_WEIGHT / (总和)
+local function pick_lamp()
+    local w1 = LAMP1_WEIGHT
+    local w2 = LAMP2_WEIGHT
+    local w3 = LAMP3_WEIGHT
+    local w4 = LAMP4_WEIGHT
+
+    local total = w1 + w2 + w3 + w4
+    if total <= 0 then
+        return LAMP4
+    end
+
+    -- 随机数 r ∈ [0, total)
+    local r = math.random() * total
+
+    if r < w1 then
+        return LAMP1
+    elseif r < w1 + w2 then
+        return LAMP2
+    elseif r < w1 + w2 + w3 then
+        return LAMP3
+    else
+        return LAMP4
+    end
+end
+
+-- 判断某个位置附近是否接近退界目标方块
+local function is_near_retreat_block(px, py, pz)
+    if RETREAT_LENGTH <= 0 then
+        return false
+    end
+    for ox = -RETREAT_LENGTH, RETREAT_LENGTH do
+        for oz = -RETREAT_LENGTH, RETREAT_LENGTH do
+            if not (ox == 0 and oz == 0) then
+                if getBlock(px + ox, py, pz + oz) == RETREAT_BLOCK then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- 当前位置的 BlockState（与 $blockState 参数对齐）
+local current = getBlockState(x, y, z)
+
+-- 当前是天花板基准方块时，根据灯带设置在正下方生成一条灯带或单个方块
+if current == CEILING_BLOCK then
+    local belowY = y - 1
+    if belowY >= 0 then
+        -- 如果两种灯带都关闭：只在正下方生成 1 个方块（也受退界限制）
+        if not ENABLE_X_STRIP and not ENABLE_Z_STRIP then
+            local belowBlock = getBlock(x, belowY, z)
+            if belowBlock == blocks.air and not is_near_retreat_block(x, belowY, z) then
+                setBlock(x, belowY, z, pick_lamp())
+            end
+            return current
+        end
+
+        -- X/Z 步长：决定在哪些天花板点上生成灯带（形成矩阵）
+        local on_step = true
+        if ENABLE_X_STRIP and X_STRIP_STEP > 1 then
+            on_step = on_step and ((x % X_STRIP_STEP) == 0)
+        end
+        if ENABLE_Z_STRIP and Z_STRIP_STEP > 1 then
+            on_step = on_step and ((z % Z_STRIP_STEP) == 0)
+        end
+
+        if on_step then
+            -- 启用 X 灯带：在 X 方向生成一条、宽度为 1 的灯带
+            if ENABLE_X_STRIP then
+                for dx = 0, (X_STRIP_LENGTH - 1) do
+                    local tx = x + dx
+                    local belowBlock = getBlock(tx, belowY, z)
+                    if belowBlock == blocks.air and not is_near_retreat_block(tx, belowY, z) then
+                        setBlock(tx, belowY, z, pick_lamp())
+                    end
+                end
+            end
+
+            -- 启用 Z 灯带：在 Z 方向生成一条、宽度为 1 的灯带
+            if ENABLE_Z_STRIP then
+                for dz = 0, (Z_STRIP_LENGTH - 1) do
+                    local tz = z + dz
+                    local belowBlock = getBlock(x, belowY, tz)
+                    if belowBlock == blocks.air and not is_near_retreat_block(x, belowY, tz) then
+                        setBlock(x, belowY, tz, pick_lamp())
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 始终返回当前位置原方块
+return current

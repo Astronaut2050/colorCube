@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>莫兰迪融合方块</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- 顶部栏 -->
+      <header id="top-bar">
+        <div id="score-group">
+          <span id="score-label">得分</span>
+          <strong id="score">0</strong>
+        </div>
+        <div id="status-indicator">
+          <span id="status-text">进行中</span>
+        </div>
+        <button id="settings-btn" type="button" aria-label="设置">⚙</button>
+      </header>
+
+      <!-- 游戏面板 -->
+      <section id="game-area">
+        <div id="canvas-wrapper">
+          <canvas id="game-canvas" width="320" height="800"></canvas>
+          <!-- 开始页面 -->
+
+          <div id="overlay" class="hidden">
+            <div class="overlay-content">
+              <div id="overlay-title">暂停</div>
+              <div id="overlay-subtitle">按 ESC 继续游戏</div>
+              <button id="restart-btn" class="hidden" type="button">重新开始</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 设置底部面板 -->
+      <aside id="settings-panel" class="hidden" aria-hidden="true">
+        <div id="settings-backdrop"></div>
+        <div id="settings-sheet">
+          <div id="settings-handle"></div>
+          <div id="settings-header">
+            <button id="tab-rules" class="tab-btn active" type="button">规则</button>
+            <button id="tab-controls" class="tab-btn" type="button">操作</button>
+          </div>
+          <div id="settings-body">
+            <!-- 规则内容 -->
+            <div id="rules-content" class="tab-content active">
+              <ul>
+                <li>所有下落方块都是 1×1 单格。</li>
+                <li>落地后，盘里所有方块都会继续检查下方是否可下落或融合。</li>
+                <li>当正下方方块颜色一致时，会自动融合并加深一个层级。</li>
+                <li>一整行全部填满且颜色一致时，会被清除并计分。</li>
+              </ul>
+            </div>
+            <!-- 操作内容 -->
+            <div id="controls-content" class="tab-content">
+              <ul>
+                <li><kbd>←</kbd> / <kbd>→</kbd>：左右移动</li>
+                <li><kbd>↓</kbd>：加速下落</li>
+                <li><kbd>ESC</kbd>：暂停 / 继续</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>

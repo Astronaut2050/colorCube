@@ -1,0 +1,70 @@
+-- 天花板基准方块
+local CEILING_BLOCK = $blockState(天花板基准方块, stone)$
+
+-- 两种方块及其权重（0~100）
+local LAMP1 = $blockState(灯具1, glowstone)$
+local LAMP1_WEIGHT = $int(灯具1比例, 50, 0, 100)$
+
+local LAMP2 = $blockState(灯具2, shroomlight)$
+local LAMP2_WEIGHT = $int(灯具2比例, 50, 0, 100)$
+
+-- 灯矩阵控制：X方向长度和Z方向长度
+local X_LENGTH = $int(X方向长度, 1, 1, 10)$
+local Z_LENGTH = $int(Z方向长度, 1, 1, 10)$
+
+-- 灯间距控制：X方向步长和Z方向步长
+local X_STEP = $int(X方向步长, 1, 1, 10)$
+local Z_STEP = $int(Z方向步长, 1, 1, 10)$
+
+-- 灯矩阵密度：控制整个灯组生成概率（1~100）
+local DENSITY = $int(灯矩阵密度, 50, 1, 100)$
+
+
+-- 按权重选择一个方块：概率 = LAMPX_WEIGHT / (总和)
+local function pick_lamp()
+    local w1 = LAMP1_WEIGHT
+    local w2 = LAMP2_WEIGHT
+
+    local total = w1 + w2
+    if total <= 0 then
+        return LAMP2
+    end
+
+    -- 随机数 r
+    local r = math.random() * total
+
+    if r < w1 then
+        return LAMP1
+    else
+        return LAMP2
+    end
+end
+
+-- 当前位置的 BlockState（与 $blockState 参数对齐）
+local current = getBlockState(x, y, z)
+
+-- 当前是天花板基准方块时，在正下方生成带间距的灯矩阵
+if current == CEILING_BLOCK then
+    -- 检查当前位置是否在步长网格点上（从X_STEP, Z_STEP开始）
+    if (x % X_STEP) == 0 and (z % Z_STEP) == 0 and x ~= 0 and z ~= 0 then
+        -- 检查密度概率：整个灯组要么全部生成，要么全部不生成
+        if math.random(1, 100) <= DENSITY then
+            local belowY = y - 1
+            if belowY >= 0 then
+                for dx = 0, (X_LENGTH - 1) do
+                    for dz = 0, (Z_LENGTH - 1) do
+                        local tx = x + dx
+                        local tz = z + dz
+                        local belowBlock = getBlock(tx, belowY, tz)
+                        if belowBlock == blocks.air then
+                            setBlock(tx, belowY, tz, pick_lamp())
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 始终返回当前位置原方块
+return current

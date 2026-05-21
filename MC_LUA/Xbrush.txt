@@ -1,0 +1,85 @@
+-- 天花板基准方块
+local CEILING_BLOCK = $blockState(天花板方块, stone)$
+
+-- 灯方块设置
+local LAMP_BLOCK1 = $blockState(灯方块1, glowstone)$  -- 第一种灯方块（萤石）
+local LAMP_BLOCK2 = $blockState(灯方块2, sea_lantern)$  -- 第二种灯方块（海晶灯）
+
+-- 灯方块比例（0~100）
+local LAMP1_WEIGHT = $int(灯方块1比例, 50, 0, 100)$  -- 灯方块1的比例
+local LAMP2_WEIGHT = $int(灯方块2比例, 50, 0, 100)$  -- 灯方块2的比例
+
+-- 随机跳过控制
+local SKIP_CHANCE = $int(随机跳过概率, 0, 0, 100)$  -- 0-100，控制整个灯矩阵随机不生成的概率
+
+-- X轴方向灯条控制
+local X_LAMP_LENGTH = $int(X轴灯条长度, 2, 1, 10)$  -- X轴灯条长度
+local X_LAMP_SPACING = $int(X轴灯间距, 3, 1, 10)$  -- X轴灯间距
+
+-- Z轴方向灯条控制
+local Z_LAMP_LENGTH = $int(Z轴灯条长度, 2, 1, 10)$  -- Z轴灯条长度
+local Z_LAMP_SPACING = $int(Z轴灯间距, 3, 1, 10)$  -- Z轴灯间距
+
+
+-- 按权重选择灯方块
+local function pick_lamp()
+    local w1 = LAMP1_WEIGHT
+    local w2 = LAMP2_WEIGHT
+    
+    local total = w1 + w2
+    if total <= 0 then
+        return LAMP_BLOCK1  -- 默认返回第一种灯方块
+    end
+    
+    -- 随机数
+    local r = math.random() * total
+    
+    if r < w1 then
+        return LAMP_BLOCK1
+    else
+        return LAMP_BLOCK2
+    end
+end
+
+-- 当前位置的 BlockState
+local current = getBlockState(x, y, z)
+
+-- 当前是天花板方块时，在正下方生成灯条
+if current == CEILING_BLOCK then
+    local belowY = y - 1
+    if belowY >= 0 then
+        -- 计算当前位置在X轴灯条-间距循环中的位置
+        local x_cycle_length = X_LAMP_LENGTH + X_LAMP_SPACING
+        local x_relative = x % x_cycle_length
+        
+        -- 计算当前位置在Z轴灯条-间距循环中的位置
+        local z_cycle_length = Z_LAMP_LENGTH + Z_LAMP_SPACING
+        local z_relative = z % z_cycle_length
+        
+        -- 检查是否是灯矩阵的起始位置
+        local is_start = (x_relative == 0) and (z_relative == 0)
+        
+        -- 如果是灯矩阵的起始位置
+        if is_start then
+            -- 检查是否需要随机跳过整个灯矩阵
+            if SKIP_CHANCE > 0 then
+                local skip_r = math.random(100)
+                if skip_r <= SKIP_CHANCE then
+                    -- 随机跳过，不生成整个灯矩阵
+                    return current
+                end
+            end
+        end
+        
+        -- 如果在X轴和Z轴的灯条范围内
+        if x_relative < X_LAMP_LENGTH and z_relative < Z_LAMP_LENGTH then
+            local belowBlock = getBlock(x, belowY, z)
+            if belowBlock == blocks.air then
+                setBlock(x, belowY, z, pick_lamp())
+            end
+        end
+    end
+end
+
+-- 始终返回当前位置原方块
+return current
