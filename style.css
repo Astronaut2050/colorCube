@@ -122,7 +122,9 @@ html, body {
 #canvas-wrapper {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   border-radius: 20px;
   overflow: hidden;
   background: linear-gradient(180deg, var(--board-bg), var(--board-bg-deep));
@@ -140,14 +142,14 @@ html, body {
 
 /* ===== 开始页面 ===== */
 #start-page {
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(29, 38, 44, 0.65);
+  background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
   transition: opacity 0.3s ease;
-  z-index: 5;
+  z-index: 50;
 }
 
 #start-page.hidden {
@@ -156,13 +158,9 @@ html, body {
 }
 
 .start-content {
-  width: calc(100% - 48px);
-  padding: 32px 24px 28px;
+  width: min(360px, calc(100% - 48px));
+  padding: 0 8px;
   text-align: center;
-  border-radius: 24px;
-  background: rgba(248, 243, 235, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.54);
-  box-shadow: 0 14px 32px rgba(40, 52, 60, 0.18);
 }
 
 #start-title {
@@ -214,7 +212,233 @@ html, body {
   background: rgba(231, 225, 217, 0.7);
 }
 
+/* ===== 计时器 ===== */
+#timer-display {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+#timer-display.hidden {
+  display: none;
+}
+
+#timer-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  background: rgba(231, 225, 217, 0.5);
+  padding: 4px 14px;
+  border-radius: 10px;
+}
+
+/* ===== 模式选择弹窗 ===== */
+#mode-select {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  z-index: 60;
+  transition: opacity 0.25s ease;
+}
+
+#mode-select.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-select-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
+}
+
+.mode-select-content {
+  position: relative;
+  width: min(393px, 100%);
+  min-height: 100%;
+  padding: 40px 20px calc(24px + var(--safe-bottom));
+  text-align: left;
+  overflow-y: auto;
+}
+
+.setup-block {
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(248, 243, 235, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  box-shadow: 0 10px 28px rgba(76, 70, 62, 0.12);
+}
+
+.setup-block + .setup-block {
+  margin-top: 16px;
+}
+
+#mode-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.setup-block h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.mode-btn {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  margin-top: 10px;
+  border: 1.5px solid rgba(88, 84, 80, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.mode-btn:active {
+  transform: scale(0.97);
+  background: rgba(231, 225, 217, 0.6);
+  border-color: var(--accent);
+}
+
+.mode-btn.selected,
+.quick-score-btn.selected,
+.setup-option.selected {
+  border-color: var(--accent);
+  background: rgba(143, 159, 136, 0.18);
+}
+
+.mode-btn-title {
+  display: block;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mode-btn-desc {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
 /* ===== 叠加层 ===== */
+.quick-score-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(231, 225, 217, 0.45);
+}
+
+.quick-score-select.hidden {
+  display: none;
+}
+
+.quick-score-btn,
+.quick-custom-score {
+  min-height: 42px;
+  border: 1.5px solid rgba(88, 84, 80, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.quick-score-btn {
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+.quick-score-btn:active {
+  transform: scale(0.96);
+  border-color: var(--accent);
+}
+
+.quick-custom-score {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+}
+
+.quick-custom-score span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+#quick-custom-input {
+  width: 96px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: right;
+}
+
+.custom-start {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  color: #faf7f2;
+}
+
+.setup-field + .setup-field {
+  margin-top: 18px;
+}
+
+.setup-label {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.segmented-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.setup-option {
+  min-height: 42px;
+  border: 1.5px solid rgba(88, 84, 80, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.setup-option:active {
+  transform: scale(0.96);
+}
+
+#setup-start-btn {
+  width: 100%;
+  margin-top: 22px;
+  padding: 14px 0;
+  border: none;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  color: #faf7f2;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 #overlay {
   position: absolute;
   inset: 0;
@@ -252,7 +476,9 @@ html, body {
   color: var(--muted);
 }
 
-#restart-btn {
+#restart-btn,
+#continue-btn,
+#exit-btn {
   margin-top: 18px;
   padding: 12px 28px;
   border: none;
@@ -264,11 +490,22 @@ html, body {
   transition: transform 0.16s ease;
 }
 
-#restart-btn.hidden {
+#continue-btn,
+#exit-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+
+#restart-btn.hidden,
+#continue-btn.hidden,
+#exit-btn.hidden {
   display: none;
 }
 
-#restart-btn:active {
+#restart-btn:active,
+#continue-btn:active,
+#exit-btn:active {
   transform: scale(0.94);
 }
 

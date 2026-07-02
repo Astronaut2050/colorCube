@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>莫兰迪融合方块</title>
+    <title>合二为一</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -14,8 +14,11 @@
           <span id="score-label">得分</span>
           <strong id="score">0</strong>
         </div>
+        <div id="timer-display" class="hidden">
+          <span id="timer-text">00:00</span>
+        </div>
         <div id="status-indicator">
-          <span id="status-text">进行中</span>
+          <span id="status-text">就绪</span>
         </div>
         <button id="settings-btn" type="button" aria-label="设置">⚙</button>
       </header>
@@ -28,18 +31,68 @@
           <!-- 开始页面 -->
           <div id="start-page">
             <div class="start-content">
-              <h1 id="start-title">莫兰迪融合方块</h1>
+              <h1 id="start-title">合二为一</h1>
               <p id="start-subtitle">轻松休闲的融合消除游戏</p>
-              <button id="start-btn" type="button">开始游戏</button>
-              <button id="start-settings-btn" type="button">设置</button>
+              <button id="start-btn" type="button">开始模式</button>
+              <button id="start-settings-btn" type="button">指引</button>
             </div>
           </div>
 
           <div id="overlay" class="hidden">
             <div class="overlay-content">
               <div id="overlay-title">暂停</div>
-              <div id="overlay-subtitle">按 ESC 继续游戏</div>
+              <div id="overlay-subtitle"></div>
               <button id="restart-btn" class="hidden" type="button">重新开始</button>
+              <button id="continue-btn" class="hidden" type="button">继续游戏</button>
+              <button id="exit-btn" class="hidden" type="button">退出游戏</button>
+            </div>
+          </div>
+
+          <!-- 模式选择页面 -->
+          <div id="mode-select" class="hidden">
+            <div class="mode-select-backdrop"></div>
+            <div class="mode-select-content">
+              <section class="setup-block">
+                <h2 id="mode-title">选择模式</h2>
+                <button id="mode-endless" class="mode-btn selected" type="button">
+                  <span class="mode-btn-title">无限模式</span>
+                  <span class="mode-btn-desc">自由畅玩，尽情消除</span>
+                </button>
+                <button id="mode-quick" class="mode-btn" type="button">
+                  <span class="mode-btn-title">快速模式</span>
+                  <span class="mode-btn-desc">达到一定分数则过关</span>
+                </button>
+                <div id="quick-score-select" class="quick-score-select hidden">
+                  <button class="quick-score-btn" data-score="10" type="button">10分</button>
+                  <button class="quick-score-btn selected" data-score="25" type="button">25分</button>
+                  <label class="quick-custom-score">
+                    <span>自定义</span>
+                    <input id="quick-custom-input" type="number" min="26" step="1" value="30" />
+                  </label>
+                  <button id="quick-custom-start" class="quick-score-btn custom-start" type="button">确定</button>
+                </div>
+              </section>
+
+              <section class="setup-block">
+                <h2>开局设置</h2>
+                <div class="setup-field">
+                  <div class="setup-label">区域大小</div>
+                  <div class="segmented-options" id="area-size-options">
+                    <button class="setup-option selected" data-cols="4" type="button">4列</button>
+                    <button class="setup-option" data-cols="6" type="button">6列</button>
+                    <button class="setup-option" data-cols="8" type="button">8列</button>
+                  </div>
+                </div>
+                <div class="setup-field">
+                  <div class="setup-label">速度等级</div>
+                  <div class="segmented-options" id="speed-options">
+                    <button class="setup-option selected" data-speed="1" type="button">1X</button>
+                    <button class="setup-option" data-speed="1.5" type="button">1.5X</button>
+                    <button class="setup-option" data-speed="3" type="button">3X</button>
+                  </div>
+                </div>
+                <button id="setup-start-btn" type="button">开始游戏</button>
+              </section>
             </div>
           </div>
         </div>
@@ -52,7 +105,7 @@
           <div id="settings-handle"></div>
           <div id="settings-header">
             <button id="tab-rules" class="tab-btn active" type="button">规则</button>
-            <button id="tab-controls" class="tab-btn" type="button">操作</button>
+            <button id="tab-controls" class="tab-btn" type="button">指引</button>
           </div>
           <div id="settings-body">
             <!-- 规则内容 -->
@@ -64,7 +117,7 @@
                 <li>一整行全部填满且颜色一致时，会被清除并计分。</li>
               </ul>
             </div>
-            <!-- 操作内容 -->
+            <!-- 指引内容 -->
             <div id="controls-content" class="tab-content">
               <ul>
                 <li><kbd>←</kbd> / <kbd>→</kbd>：左右移动</li>
