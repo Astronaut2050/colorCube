@@ -834,17 +834,8 @@ function selectQuickTargetScore(targetScore, button) {
   quickCustomStart.classList.remove("selected");
 }
 
-function startCustomQuickGame() {
-  const customScore = Number(quickCustomInput.value);
-
-  if (!Number.isFinite(customScore) || customScore <= 25) {
-    quickCustomInput.setCustomValidity("自定义分数需要大于 25");
-    quickCustomInput.reportValidity();
-    return;
-  }
-
+function selectCustomQuickScore() {
   quickCustomInput.setCustomValidity("");
-  quickTargetScore = Math.floor(customScore);
   quickScoreSelect.querySelectorAll("[data-score]").forEach((button) => {
     button.classList.remove("selected");
   });
@@ -991,8 +982,11 @@ modeQuick.addEventListener("click", showQuickScoreSelect);
 quickScoreSelect.querySelectorAll("[data-score]").forEach((button) => {
   button.addEventListener("click", () => selectQuickTargetScore(Number(button.dataset.score), button));
 });
-quickCustomStart.addEventListener("click", startCustomQuickGame);
-quickCustomInput.addEventListener("input", () => quickCustomInput.setCustomValidity(""));
+quickCustomStart.addEventListener("click", selectCustomQuickScore);
+quickCustomInput.addEventListener("input", () => {
+  quickCustomInput.setCustomValidity("");
+  selectCustomQuickScore();
+});
 areaSizeOptions.querySelectorAll("[data-cols]").forEach((button) => {
   button.addEventListener("click", () => selectAreaSize(Number(button.dataset.cols), button));
 });

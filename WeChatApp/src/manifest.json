@@ -1,0 +1,20 @@
+{
+  "name": "彩块叠叠",
+  "appid": "__UNI__COLORCUBE",
+  "description": "轻量休闲的方块下落与合并消除小游戏",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "彩块叠叠"
+  }
+}

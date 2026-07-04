@@ -1,0 +1,19 @@
+{
+  "pages": [
+    {
+      "path": "pages/game/index",
+      "style": {
+        "navigationBarTitleText": "彩块叠叠",
+        "navigationStyle": "custom",
+        "disableScroll": true,
+        "enablePullDownRefresh": false
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "彩块叠叠",
+    "navigationBarBackgroundColor": "#f6f0df",
+    "backgroundColor": "#f6f0df"
+  }
+}
