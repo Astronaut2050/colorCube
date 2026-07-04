@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "pages/game/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "彩块叠叠",
+    "navigationBarBackgroundColor": "#f6f0df",
+    "backgroundColor": "#f6f0df"
+  },
+  "usingComponents": {}
+}
