@@ -1,2 +1,12 @@
 node_modules/
 .npmrc
+.agents/
+WeChatApp/package-lock.json
+WeChatApp/INTERACTION_PROTOTYPE.md
+WeChatApp/index.html
+WeChatApp/vite.config.js
+force_delete_epub.bat
+generate_ssh.bat
+run_convert.bat
+requirements.txt
+skills-lock.json

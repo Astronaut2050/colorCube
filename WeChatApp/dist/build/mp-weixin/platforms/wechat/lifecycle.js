@@ -1,1 +1,0 @@
-"use strict";exports.createGameLifecycle=function(e){let n=!1;return{handleHide:function(){"running"===e.getSnapshot().status&&(e.pause("background"),n=!0)},handleShow:function(){const t=e.getSnapshot();n&&"paused"===t.status&&"background"===t.pauseReason&&e.resume("foreground"),n=!1}}};

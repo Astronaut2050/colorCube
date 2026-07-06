@@ -71,7 +71,6 @@ export function computeBoardLayout({ width, height, rows, cols, blockAspect = 1 
 
 export function createCanvasRenderer(theme = THEMES.leaf) {
   let ctx = null;
-  let canvas = null;
   let layout = null;
   let pixelRatio = 1;
   let seenEventKeys = new Set();
@@ -82,21 +81,9 @@ export function createCanvasRenderer(theme = THEMES.leaf) {
   let nextPreviewMorph = null;
   let hasShownNextPreview = false;
 
-  function resize({ context, canvasNode, width, height, ratio = 1, rows, cols }) {
+  function resize({ context, width, height, ratio = 1, rows, cols }) {
     ctx = context;
-    canvas = canvasNode || null;
     pixelRatio = ratio || 1;
-
-    if (canvas) {
-      canvas.width = Math.floor(width * pixelRatio);
-      canvas.height = Math.floor(height * pixelRatio);
-    }
-
-    if (ctx?.setTransform) {
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    } else if (ctx?.scale) {
-      ctx.scale(pixelRatio, pixelRatio);
-    }
 
     layout = computeBoardLayout({ width, height, rows, cols, blockAspect: 1 });
   }
@@ -381,7 +368,6 @@ export function createCanvasRenderer(theme = THEMES.leaf) {
 
   function destroy() {
     ctx = null;
-    canvas = null;
     layout = null;
   }
 

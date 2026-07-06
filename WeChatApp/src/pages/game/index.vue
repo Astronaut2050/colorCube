@@ -30,6 +30,7 @@
           />
           <view v-if="screen === 'game' && (!canvasReady || settingsVisible)" class="dom-board">
             <view v-if="nextPreviewVisible" :class="['next-preview-rail', nextPreviewPulse && 'is-changing']" :style="nextPreviewStyle" />
+            <view v-if="nextPreviewMorphStyle" class="next-preview-morph" :style="nextPreviewMorphStyle" />
             <view
               v-for="cell in domBoardCells"
               :key="cell.key"
@@ -118,9 +119,9 @@
     </view>
 
     <view v-if="settingsVisible" class="settings-panel">
-      <view class="settings-backdrop" @tap="continueCurrentGame" />
+      <view class="settings-backdrop" @tap="closeSettingsPanel" />
       <view class="settings-window">
-        <view class="settings-actions">
+        <view v-if="settingsFromGame" class="settings-actions">
           <button class="settings-action restart-action" @tap="restartToHome">重新开始</button>
           <button class="settings-action continue-action" @tap="continueCurrentGame">继续游戏</button>
         </view>
@@ -129,6 +130,23 @@
           <button :class="['tab-btn', settingsTab === 'controls' && 'active']" @tap="settingsTab = 'controls'">指引</button>
         </view>
         <view v-if="settingsTab === 'rules'" class="tab-content">
+          <view class="rule-diagram">
+            <view class="diagram-row">
+              <view class="diagram-cell level-1" />
+              <text class="diagram-symbol">+</text>
+              <view class="diagram-cell level-1" />
+              <text class="diagram-symbol">→</text>
+              <view class="diagram-cell level-2" />
+            </view>
+            <text class="diagram-caption">同色相邻时融合升级</text>
+            <view class="diagram-board">
+              <view class="diagram-board-cell level-2" />
+              <view class="diagram-board-cell level-2" />
+              <view class="diagram-board-cell level-2" />
+              <view class="diagram-board-cell level-2" />
+            </view>
+            <text class="diagram-caption">整行同色填满时清除计分</text>
+          </view>
           <text class="tab-line">所有下落方块都是 1x1 单格。</text>
           <text class="tab-line">落地后，盘里所有方块都会继续检查下方是否可下落或融合。</text>
           <text class="tab-line">当正下方方块颜色一致时，会自动融合并加深一个层级。</text>
@@ -145,7 +163,7 @@
 </template>
 
 <script setup>
-import { computed, getCurrentInstance, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
+import { computed, getCurrentInstance, nextTick, onBeforeUnmount, reactive, ref, shallowRef, watch } from "vue";
 import { onHide, onReady, onShow, onUnload } from "@dcloudio/uni-app";
 import { createGame } from "../../core/game.js";
 import { createCanvasRenderer } from "../../renderers/canvas-renderer.js";
@@ -159,19 +177,25 @@ const speedOptions = SPEED_OPTIONS;
 const screen = ref("home");
 const settingsVisible = ref(false);
 const settingsTab = ref("rules");
+const settingsFromGame = ref(false);
 const useCustomQuickScore = ref(false);
 const customQuickScore = ref("30");
 const settings = reactive({ ...DEFAULT_GAME_OPTIONS });
 const game = createGame();
 const lifecycle = createGameLifecycle(game);
-const snapshot = ref(game.getSnapshot());
+const snapshot = shallowRef(game.getSnapshot());
 const scoreBump = ref(false);
 const navigationTopOffset = ref(112);
 const canvasReady = ref(false);
 const nextPreviewPulse = ref(false);
+const nextPreviewMorph = ref(null);
+const hasShownNextPreview = ref(false);
+const viewportSize = ref({ width: 390, height: 844, safeBottom: 0 });
 const componentInstance = getCurrentInstance();
 const HTML_BLOCK_SIZE = 52;
 const HTML_ROWS = 11;
+const TOP_BAR_HEIGHT = 52;
+const GAME_VERTICAL_GAP = 18;
 const theme = pickTheme();
 let renderer = null;
 let animationHandle = null;
@@ -225,10 +249,29 @@ const overlayText = computed(() => {
   return "";
 });
 
-const gameBoardStyle = computed(() => {
+const boardDimensions = computed(() => {
   const cols = screen.value === "game" ? snapshot.value.config.cols : settings.cols;
-  const width = cols * HTML_BLOCK_SIZE;
-  const height = HTML_ROWS * HTML_BLOCK_SIZE;
+  const rows = screen.value === "game" ? snapshot.value.config.rows : HTML_ROWS;
+  const maxDesignWidth = cols * HTML_BLOCK_SIZE;
+  const availableWidth = Math.max(260, viewportSize.value.width - 16);
+  const availableHeight = Math.max(
+    320,
+    viewportSize.value.height
+      - navigationTopOffset.value
+      - TOP_BAR_HEIGHT
+      - viewportSize.value.safeBottom
+      - GAME_VERTICAL_GAP,
+  );
+  const widthByHeight = availableHeight * cols / rows;
+  const width = Math.floor(Math.max(220, Math.min(maxDesignWidth, availableWidth, widthByHeight)));
+  const height = Math.floor(width * rows / cols);
+  const blockSize = width / cols;
+
+  return { cols, rows, width, height, blockSize };
+});
+
+const gameBoardStyle = computed(() => {
+  const { width, height } = boardDimensions.value;
   return {
     width: `${width}px`,
     aspectRatio: `${width} / ${height}`,
@@ -282,6 +325,9 @@ const activeBlockStyle = computed(() => {
   if (!piece) {
     return null;
   }
+  if (currentPieceIsMorphing.value) {
+    return null;
+  }
   return domBlockStyle(piece.x, piece.y + piece.fallProgress, piece.level);
 });
 
@@ -297,7 +343,68 @@ const nextPreviewVisible = computed(() => {
   if (!piece) {
     return Boolean(snapshot.value.nextPiece);
   }
-  return piece.y + piece.fallProgress > 0.27;
+  return piece.y + piece.fallProgress > 1;
+});
+
+watch(
+  nextPreviewVisible,
+  (visible) => {
+    if (visible && screen.value === "game") {
+      hasShownNextPreview.value = true;
+    }
+  },
+);
+
+const currentPieceIsMorphing = computed(() => {
+  const morph = nextPreviewMorph.value;
+  const piece = snapshot.value.currentPiece;
+  if (!morph || !piece) {
+    return false;
+  }
+  return piece.x === morph.targetColumn
+    && piece.level === morph.level
+    && Date.now() - morph.startTime < morph.duration;
+});
+
+const nextPreviewMorphStyle = computed(() => {
+  const morph = nextPreviewMorph.value;
+  if (!morph) {
+    return null;
+  }
+
+  const elapsedMarker = snapshot.value.elapsedMs;
+  void elapsedMarker;
+
+  const rawT = Math.max(0, Math.min(1, (Date.now() - morph.startTime) / morph.duration));
+  if (rawT >= 1) {
+    return null;
+  }
+
+  const eased = 1 - Math.pow(1 - rawT, 3);
+  const boardWidth = boardDimensions.value.width;
+  const boardHeight = boardDimensions.value.height;
+  const startLeft = 4 / boardWidth * 100;
+  const startTop = 4 / boardHeight * 100;
+  const startWidth = Math.max(0, (boardWidth - 8) / boardWidth * 100);
+  const startHeight = 10 / boardHeight * 100;
+  const cellWidth = cellWidthPercent.value;
+  const cellHeight = cellHeightPercent.value;
+  const insetX = 2 / boardWidth * 100;
+  const insetY = 2 / boardHeight * 100;
+  const targetLeft = morph.targetColumn * cellWidth + insetX;
+  const targetTop = insetY;
+  const targetWidth = Math.max(0, cellWidth - insetX * 2);
+  const targetHeight = Math.max(0, cellHeight - insetY * 2);
+
+  return {
+    left: `${startLeft + (targetLeft - startLeft) * eased}%`,
+    top: `${startTop + (targetTop - startTop) * eased}%`,
+    width: `${startWidth + (targetWidth - startWidth) * eased}%`,
+    height: `${startHeight + (targetHeight - startHeight) * eased}%`,
+    borderRadius: `${5 + (4 - 5) * eased}px`,
+    opacity: `${1 - 0.15 * eased}`,
+    backgroundColor: blockColor(morph.level),
+  };
 });
 
 watch(
@@ -325,6 +432,19 @@ watch(
     if (!nextSpawnKey || nextSpawnKey === previousSpawnKey) {
       return;
     }
+    const spawnEvent = [...(snapshot.value.events || [])].reverse().find((event) => event.type === "spawn");
+    if (spawnEvent?.piece && hasShownNextPreview.value) {
+      nextPreviewMorph.value = {
+        level: spawnEvent.piece.level,
+        targetColumn: spawnEvent.piece.x,
+        startTime: Date.now(),
+        duration: 260,
+      };
+      setTimeout(() => {
+        nextPreviewMorph.value = null;
+      }, 270);
+    }
+    hasShownNextPreview.value = false;
     nextPreviewPulse.value = false;
     setTimeout(() => {
       nextPreviewPulse.value = true;
@@ -340,17 +460,11 @@ function now() {
 }
 
 function requestFrame(callback) {
-  if (typeof requestAnimationFrame !== "undefined") {
-    return requestAnimationFrame(callback);
-  }
   return setTimeout(() => callback(now()), 16);
 }
 
 function cancelFrame(handle) {
-  if (!handle) return;
-  if (typeof cancelAnimationFrame !== "undefined") {
-    cancelAnimationFrame(handle);
-  } else {
+  if (handle) {
     clearTimeout(handle);
   }
 }
@@ -361,6 +475,16 @@ function updateNavigationOffset() {
     const systemInfo = uni.getSystemInfoSync?.();
     const statusBarHeight = systemInfo?.statusBarHeight || 44;
     const menuBottom = menuRect?.bottom || statusBarHeight + 48;
+    const windowHeight = systemInfo?.windowHeight || viewportSize.value.height;
+    const windowWidth = systemInfo?.windowWidth || viewportSize.value.width;
+    const safeBottom = systemInfo?.safeArea?.bottom
+      ? Math.max(0, windowHeight - systemInfo.safeArea.bottom)
+      : 0;
+    viewportSize.value = {
+      width: windowWidth,
+      height: windowHeight,
+      safeBottom,
+    };
     navigationTopOffset.value = Math.ceil(menuBottom + 16);
   } catch (error) {
     navigationTopOffset.value = 112;
@@ -378,6 +502,7 @@ function goSetup() {
 
 function openSettings(tab) {
   settingsTab.value = tab;
+  settingsFromGame.value = screen.value === "game";
   settingsVisible.value = true;
   if (screen.value === "game" && snapshot.value.status === "running") {
     game.pause("manual");
@@ -413,26 +538,39 @@ function applyQuickScore() {
   return true;
 }
 
+let frameCount = 0;
+
 function refresh() {
-  snapshot.value = game.getSnapshot();
+  const nextSnapshot = game.getSnapshot();
   if (renderer && canvasReady.value) {
     try {
-      renderer.draw(snapshot.value);
+      renderer.draw(nextSnapshot);
     } catch (error) {
       renderer?.destroy();
       renderer = null;
       canvasReady.value = false;
     }
   }
+  frameCount++;
+  if (frameCount % 6 === 0) {
+    snapshot.value = nextSnapshot;
+  }
+  return nextSnapshot;
 }
 
 function loop(timestamp) {
-  game.tick(timestamp || now());
-  refresh();
-  if (snapshot.value.status === "running") {
+  try {
+    game.tick(timestamp || now());
+    const nextSnapshot = refresh();
+    if (nextSnapshot.status === "running") {
+      animationHandle = requestFrame(loop);
+    } else {
+      snapshot.value = nextSnapshot;
+      animationHandle = null;
+    }
+  } catch (err) {
+    console.error("[loop]", err);
     animationHandle = requestFrame(loop);
-  } else {
-    animationHandle = null;
   }
 }
 
@@ -484,9 +622,8 @@ function queryCanvasNode() {
 
 async function initCanvas() {
   const systemInfo = uni.getSystemInfoSync?.() || {};
-  const maxBoardWidth = Math.max(260, (systemInfo.windowWidth || 390) - 64);
-  const fallbackWidth = Math.floor(Math.min(snapshot.value.config.cols * HTML_BLOCK_SIZE, maxBoardWidth));
-  const fallbackHeight = Math.floor(fallbackWidth * HTML_ROWS / snapshot.value.config.cols);
+  const fallbackWidth = boardDimensions.value.width;
+  const fallbackHeight = boardDimensions.value.height;
   const pixelRatio = systemInfo.pixelRatio || 1;
   const canvasInfo = await queryCanvasNode();
   const canvasNode = canvasInfo?.node;
@@ -548,6 +685,14 @@ async function continueCurrentGame() {
     resumeGame();
     startLoop();
   }
+}
+
+function closeSettingsPanel() {
+  if (settingsFromGame.value) {
+    continueCurrentGame();
+    return;
+  }
+  settingsVisible.value = false;
 }
 
 function restartToHome() {
@@ -762,6 +907,24 @@ onBeforeUnmount(() => {
 
 .next-preview-rail.is-changing {
   animation: next-preview-in 0.24s ease both;
+}
+
+.next-preview-morph {
+  position: absolute;
+  z-index: 5;
+  box-sizing: border-box;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.next-preview-morph::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 12px;
+  top: 2px;
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .dom-board {
@@ -1163,6 +1326,76 @@ onBeforeUnmount(() => {
   transform: scale(0.97);
 }
 
+.rule-diagram {
+  margin-bottom: 12px;
+  padding: 14px 12px;
+  border-radius: 16px;
+  background: rgba(231, 225, 217, 0.34);
+}
+
+.diagram-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.diagram-cell,
+.diagram-board-cell {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.22);
+}
+
+.diagram-cell.level-1,
+.diagram-board-cell.level-1 {
+  background: #c8daa0;
+}
+
+.diagram-cell.level-2,
+.diagram-board-cell.level-2 {
+  background: #8db84e;
+}
+
+.diagram-symbol {
+  color: #756c64;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.diagram-caption {
+  display: block;
+  margin: 8px 0 12px;
+  color: #756c64;
+  font-size: 12px;
+  text-align: center;
+}
+
+.diagram-board {
+  display: grid;
+  grid-template-columns: repeat(4, 30px);
+  justify-content: center;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.diagram-board-cell {
+  animation: diagram-clear 1.4s ease-in-out infinite;
+}
+
+.diagram-board-cell:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.diagram-board-cell:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.diagram-board-cell:nth-child(4) {
+  animation-delay: 0.24s;
+}
+
 .settings-header {
   display: flex;
   margin-bottom: 16px;
@@ -1250,6 +1483,17 @@ onBeforeUnmount(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes diagram-clear {
+  0%, 62%, 100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  78% {
+    opacity: 0.18;
+    transform: scaleY(0.18);
   }
 }
 

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>彩块叠叠</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- 顶部栏 -->
+      <header id="top-bar">
+        <div id="score-group">
+          <span id="score-label">得分</span>
+          <strong id="score">0</strong>
+        </div>
+        <div id="timer-display" class="hidden">
+          <span id="timer-text">00:00</span>
+        </div>
+        <div id="status-indicator">
+          <span id="status-text">就绪</span>
+        </div>
+        <button id="settings-btn" type="button" aria-label="设置">⚙</button>
+      </header>
+
+      <!-- 游戏面板 -->
+      <section id="game-area">
+        <div id="canvas-wrapper">
+          <canvas id="game-canvas" width="364" height="572"></canvas>
+
+          <!-- 开始页面 -->
+          <div id="start-page">
+            <div class="start-content">
+              <h1 id="start-title">彩块叠叠</h1>
+              <p id="start-subtitle">轻松休闲的融合消除游戏</p>
+              <button id="start-btn" type="button">开始模式</button>
+              <button id="start-settings-btn" type="button">指引</button>
+            </div>
+          </div>
+
+          <div id="overlay" class="hidden">
+            <div class="overlay-content">
+              <div id="overlay-title">暂停</div>
+              <div id="overlay-subtitle"></div>
+              <button id="restart-btn" class="hidden" type="button">重新开始</button>
+              <button id="continue-btn" class="hidden" type="button">继续游戏</button>
+              <button id="exit-btn" class="hidden" type="button">退出游戏</button>
+            </div>
+          </div>
+
+          <!-- 模式选择页面 -->
+          <div id="mode-select" class="hidden">
+            <div class="mode-select-backdrop"></div>
+            <div class="mode-select-content">
+              <section class="setup-block">
+                <h2 id="mode-title">选择模式</h2>
+                <div class="mode-grid">
+                  <button id="mode-endless" class="mode-btn selected" type="button">
+                    <span class="mode-btn-title">无限模式</span>
+                    <span class="mode-btn-desc">自由畅玩</span>
+                  </button>
+                  <button id="mode-quick" class="mode-btn" type="button">
+                    <span class="mode-btn-title">快速模式</span>
+                    <span class="mode-btn-desc">达标过关</span>
+                  </button>
+                </div>
+                <div id="quick-score-select" class="quick-score-select hidden">
+                  <div class="quick-score-label">过关分数</div>
+                  <button class="quick-score-btn" data-score="10" type="button">10分</button>
+                  <button class="quick-score-btn selected" data-score="25" type="button">25分</button>
+                  <button id="quick-custom-start" class="quick-score-btn custom-start" type="button">自定义</button>
+                  <label class="quick-custom-score">
+                    <input id="quick-custom-input" type="number" min="26" step="1" value="30" />
+                    <span class="quick-custom-unit">分</span>
+                  </label>
+                </div>
+              </section>
+
+              <section class="setup-block">
+                <h2>开局设置</h2>
+                <div class="setup-field">
+                  <div class="setup-label">区域大小</div>
+                  <div class="segmented-options" id="area-size-options">
+                    <button class="setup-option selected" data-cols="4" type="button">4列</button>
+                    <button class="setup-option" data-cols="6" type="button">6列</button>
+                    <button class="setup-option" data-cols="8" type="button">8列</button>
+                  </div>
+                </div>
+                <div class="setup-field">
+                  <div class="setup-label">速度等级</div>
+                  <div class="segmented-options" id="speed-options">
+                    <button class="setup-option selected" data-speed="1" type="button">1倍</button>
+                    <button class="setup-option" data-speed="2" type="button">2倍</button>
+                    <button class="setup-option" data-speed="4" type="button">4倍</button>
+                  </div>
+                </div>
+                <button id="setup-start-btn" type="button">开始游戏</button>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 设置底部面板 -->
+      <aside id="settings-panel" class="hidden" aria-hidden="true">
+        <div id="settings-backdrop"></div>
+        <div id="settings-sheet">
+          <div id="settings-handle"></div>
+          <div id="settings-header">
+            <button id="tab-rules" class="tab-btn active" type="button">规则</button>
+            <button id="tab-controls" class="tab-btn" type="button">指引</button>
+          </div>
+          <div id="settings-body">
+            <!-- 规则内容 -->
+            <div id="rules-content" class="tab-content active">
+              <ul>
+                <li>所有下落方块都是 1×1 单格。</li>
+                <li>落地后，盘里所有方块都会继续检查下方是否可下落或融合。</li>
+                <li>当正下方方块颜色一致时，会自动融合并加深一个层级。</li>
+                <li>一整行全部填满且颜色一致时，会被清除并计分。</li>
+              </ul>
+            </div>
+            <!-- 指引内容 -->
+            <div id="controls-content" class="tab-content">
+              <ul>
+                <li><kbd>←</kbd> / <kbd>→</kbd>：左右移动</li>
+                <li><kbd>↓</kbd>：加速下落</li>
+                <li><kbd>ESC</kbd>：暂停 / 继续</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <script src="main.js"></script>
+  </body>
+</html>

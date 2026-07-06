@@ -1,22 +1,21 @@
 {
-  "libVersion": "3.15.2",
-  "projectname": "mp-weixin",
-  "condition": {},
+  "libVersion": "3.16.2",
+  "projectname": "WeChatMiniGame",
   "setting": {
-    "urlCheck": false,
-    "coverView": false,
+    "urlCheck": true,
+    "coverView": true,
     "lazyloadPlaceholderEnable": false,
     "skylineRenderEnable": false,
     "preloadBackgroundData": false,
+    "compileHotReLoad": true,
     "autoAudits": false,
     "useApiHook": true,
     "showShadowRootInWxmlPanel": false,
     "useStaticServer": false,
     "useLanDebug": false,
     "showES6CompileOption": false,
-    "compileHotReLoad": true,
     "checkInvalidKey": true,
     "ignoreDevUnusedFiles": true,
-    "bigPackageSizeSupport": true
+    "bigPackageSizeSupport": false
   }
 }

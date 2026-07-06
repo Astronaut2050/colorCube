@@ -42,6 +42,7 @@ export function createGame(options = {}) {
   let isSoftDropping = false;
   let spawnHoldPending = false;
   let spawnHoldUntil = 0;
+  let pausedAt = 0;
   let events = [];
 
   function emit(event) {
@@ -84,6 +85,7 @@ export function createGame(options = {}) {
     nextPieceLevel = randomLevel(rng);
     status = "running";
     pauseReason = null;
+    pausedAt = 0;
     score = 0;
     elapsedMs = 0;
     lastTickTime = 0;
@@ -102,6 +104,7 @@ export function createGame(options = {}) {
     }
     status = "paused";
     pauseReason = reason;
+    pausedAt = Date.now();
     isSoftDropping = false;
     emit({ type: "pause", reason });
   }
@@ -115,14 +118,23 @@ export function createGame(options = {}) {
     }
     status = "running";
     pauseReason = null;
-    lastTickTime = 0;
-    lastDropTime = 0;
+    if (pausedAt) {
+      const pausedDuration = Date.now() - pausedAt;
+      if (lastTickTime) lastTickTime += pausedDuration;
+      if (lastDropTime) lastDropTime += pausedDuration;
+      if (spawnHoldUntil) spawnHoldUntil += pausedDuration;
+    } else {
+      lastTickTime = 0;
+      lastDropTime = 0;
+    }
+    pausedAt = 0;
     emit({ type: "resume", reason });
   }
 
   function exit() {
     status = "idle";
     pauseReason = null;
+    pausedAt = 0;
     currentPiece = null;
     isSoftDropping = false;
     fallProgress = 0;
