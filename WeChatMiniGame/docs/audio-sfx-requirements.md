@@ -41,30 +41,27 @@
 
 ## 3. 第一阶段必须添加的音效场景
 
-| 场景 | 触发来源 | 建议音效 key | 优先级 | 说明 |
-| --- | --- | --- | --- | --- |
-| 开始按钮 | 首页 `start`、设置页 `start_game` | `ui_start` | P0 | 用户进入游戏流程或开局时播放，建立启动反馈。 |
-| 普通按钮点击 | 设置、返回、继续、重开、退出、标签切换 | `ui_tap` | P0 | 所有非危险 UI 点击统一使用轻点击音。 |
-| 选项切换 | 模式、分数、列数、速度选择 | `ui_select` | P0 | 比普通点击稍亮，表示选项已生效。 |
-| 左右移动成功 | `move` 事件 | `piece_move` | P0 | 只在移动成功时播放，撞墙或被挡不播放或播放弱失败音。 |
-| 无效左右移动 | `game.moveLeft()` / `game.moveRight()` 返回 `false` | `piece_blocked` | P1 | 可选，音量很低，避免误操作时烦躁。 |
-| 加速下落开始 | 下滑触发 `softDropStart()` | `piece_soft_drop` | P0 | 一次下滑只播放一次，不随每格下落重复播放。 |
-| 方块固定 | `lock` 事件 | `piece_lock` | P0 | 普通落地反馈，短而柔。 |
-| 同级合成 | `merge` 事件 | `piece_merge` | P0 | 核心爽点，建议随 level 或连锁次数略微升调。 |
-| 整行消除 | `lineClear` 事件 | `line_clear` | P0 | 比合成更亮，和当前 220ms 消除动画同步。 |
-| 胜利 | `won` 事件 | `game_win` | P0 | 快速模式达标时播放一次。 |
-| 失败 | `gameOver` 事件 | `game_over` | P0 | 顶部堆满时播放一次，柔和下行音。 |
+| 场景               | 触发来源                               | 建议音效 key    | 优先级 | 说明                                                 |
+| ------------------ | -------------------------------------- | --------------- | ------ | ---------------------------------------------------- |
+| 开始按钮           | 首页 `start`、设置页 `start_game`  | `ui_start`    | P0     | 用户进入游戏流程或开局时播放，建立启动反馈。         |
+| 普通按钮点击       | 设置、返回、继续、重开、退出、标签切换 | `ui_tap`      | P0     | 所有非危险 UI 点击统一使用轻点击音。                 |
+| 选项切换           | 模式、分数、列数、速度选择             | `ui_select`   | P0     | 比普通点击稍亮，表示选项已生效。                     |
+| 下一个方块开始下落 | 下一个方块从顶部条变换成下落方块的过程 | `next_drop`   | P0     | 告知下一个方块下落                                   |
+| 左右移动成功       | `move` 事件                          | `piece_move`  | P0     | 只在移动成功时播放，撞墙或被挡不播放或播放弱失败音。 |
+| 同级合成           | `merge` 事件                         | `piece_merge` | P0     | 核心爽点，建议随 level 或连锁次数略微升调。          |
+| 整行消除           | `lineClear` 事件                     | `line_clear`  | P0     | 比合成更亮，和当前 220ms 消除动画同步。              |
+| 胜利               | `won` 事件                           | `game_win`    | P0     | 快速模式达标时播放一次。                             |
+| 失败               | `gameOver` 事件                      | `game_over`   | P0     | 顶部堆满时播放一次，柔和下行音。                     |
 
 ## 4. 第二阶段可选音效场景
 
-| 场景 | 触发来源 | 建议音效 key | 优先级 | 说明 |
-| --- | --- | --- | --- | --- |
-| 新方块生成 | `spawn` 事件 | `piece_spawn` | P1 | 可与顶部下一块预览变形动画配合，但音量必须低。 |
-| 下一块预览出现 | 渲染层 `nextPreviewVisible` 首次出现 | `next_preview` | P2 | 目前只是视觉辅助，不建议第一版加。 |
-| 暂停 | `pause` 事件，手动暂停时 | `game_pause` | P1 | 后台自动暂停不播放。 |
-| 恢复 | `resume` 事件，手动恢复时 | `game_resume` | P1 | 从设置面板继续游戏时播放。 |
-| 分数增长 | `score` 变化 | `score_bump` | P2 | 已有视觉 bump，音效可先由合成/消除覆盖。 |
-| 输入框确认 | 自定义目标分输入完成 | `ui_confirm` | P2 | 优先级低，可复用 `ui_select`。 |
+| 场景           | 触发来源                    | 建议音效 key    | 优先级 | 说明                                     |
+| -------------- | --------------------------- | --------------- | ------ | ---------------------------------------- |
+| 下一块预览出现 |                             |                 | P2     | 目前只是视觉辅助，不建议第一版加。       |
+| 暂停           | `pause` 事件，手动暂停时  | `game_pause`  | P1     | 后台自动暂停不播放。                     |
+| 恢复           | `resume` 事件，手动恢复时 | `game_resume` | P1     | 从设置面板继续游戏时播放。               |
+| 分数增长       | `score` 变化              | `score_bump`  | P2     | 已有视觉 bump，音效可先由合成/消除覆盖。 |
+| 输入框确认     | 自定义目标分输入完成        | `ui_confirm`  | P2     | 优先级低，可复用 `ui_select`。         |
 
 ## 5. 不建议添加音效的场景
 
@@ -76,21 +73,27 @@
 
 ## 6. 素材清单
 
-第一阶段建议准备 11 个短音效：
+第一阶段建议准备 9 个短音效，严格对应第 3 节确认的 P0 场景。
 
-| 文件名 | key | 时长建议 | 音量建议 | 声音描述 |
-| --- | --- | --- | --- | --- |
-| `ui_start.wav` | `ui_start` | 0.25s - 0.5s | 中 | 轻快上扬启动音。 |
-| `ui_tap.wav` | `ui_tap` | 0.05s - 0.15s | 低 | 柔和点击、木质或轻电子均可。 |
-| `ui_select.wav` | `ui_select` | 0.08s - 0.2s | 低中 | 比点击更明亮的确认音。 |
-| `piece_move.wav` | `piece_move` | 0.04s - 0.12s | 低 | 轻微滑动或短 blip。 |
-| `piece_blocked.wav` | `piece_blocked` | 0.08s - 0.18s | 低 | 柔和阻挡提示，不刺耳。 |
-| `piece_soft_drop.wav` | `piece_soft_drop` | 0.12s - 0.25s | 低中 | 短促下坠、轻 whoosh。 |
-| `piece_lock.wav` | `piece_lock` | 0.08s - 0.18s | 低中 | 轻落地、低冲击感。 |
-| `piece_merge.wav` | `piece_merge` | 0.15s - 0.35s | 中 | 清脆合成，上扬、带一点 sparkle。 |
-| `line_clear.wav` | `line_clear` | 0.25s - 0.55s | 中高 | 明亮扫过或闪光消除。 |
-| `game_win.wav` | `game_win` | 0.8s - 1.5s | 中高 | 简短胜利 jingle。 |
-| `game_over.wav` | `game_over` | 0.6s - 1.2s | 中 | 柔和下行失败音。 |
+实际代码中可对齐的动画/节奏参考：
+
+- 顶部条转变为下落方块：`NEXT_PREVIEW_MORPH_MS = 260ms`，同时 `SPAWN_MORPH_HOLD_MS = 260ms`。
+- 同级合成动画：`MERGE_ANIMATION_MS = 140ms`。
+- 整行消除动画：`LINE_CLEAR_ANIMATION_MS = 220ms`。
+- 下一块预览出现动画：`NEXT_PREVIEW_REVEAL_MS = 180ms`，第一阶段不单独配音。
+- 普通下落节奏：`BASE_DROP_INTERVAL = 520ms`，加速下落节奏：`SOFT_DROP_INTERVAL = 80ms`，第一阶段不为每格下落配音。
+
+| 文件名 | key | 对齐的代码/动画 | 时长建议 | 音量建议 | 声音设计 |
+| --- | --- | --- | --- | --- | --- |
+| `ui_start.wav` | `ui_start` | 首页/设置页立即切屏，无独立动画 | 0.24s - 0.36s | 中 | 轻快上扬的启动确认音，尾音短，不能盖过开局后的 `next_drop`。 |
+| `ui_tap.wav` | `ui_tap` | 普通按钮即时反馈 | 0.05s - 0.10s | 低 | 柔和短 click，低频少，适合高频点击。 |
+| `ui_select.wav` | `ui_select` | 选项状态即时切换 | 0.09s - 0.16s | 低中 | 比 `ui_tap` 更明亮，带轻微上扬，表示选项已生效。 |
+| `next_drop.wav` | `next_drop` | 顶部条 morph 为方块，260ms | 0.22s - 0.30s | 低中 | 从细窄闪光感开始，快速收束成轻落点；主能量集中在前 260ms 内。 |
+| `piece_move.wav` | `piece_move` | 左右移动成功，下一帧位置变化 | 0.04s - 0.08s | 低 | 极短 blip/滑动 tick，干净、轻，不要拖尾。 |
+| `piece_merge.wav` | `piece_merge` | 合成动画 140ms | 0.12s - 0.18s | 中 | 清脆上扬合成音，带一点 sparkle，峰值在 80ms - 120ms。 |
+| `line_clear.wav` | `line_clear` | 整行消除动画 220ms | 0.20s - 0.28s | 中高 | 明亮横向扫过音，前段清晰、尾部快速淡出，和 220ms 消除动画同步。 |
+| `game_win.wav` | `game_win` | 胜利弹层即时出现 | 0.85s - 1.20s | 中高 | 简短胜利 jingle，明亮但克制，避免像长 BGM。 |
+| `game_over.wav` | `game_over` | 失败弹层即时出现 | 0.65s - 0.95s | 中 | 柔和下行失败音，温和提示，不惊吓、不刺耳。 |
 
 发布格式建议：
 
@@ -109,18 +112,17 @@
 整体风格：清脆、轻快、治愈、轻电子、适合手机外放，不刺耳，不厚重，不要人声，不要背景音乐。
 格式：wav，48kHz，短音效，干声，不加长混响。
 
-需要生成：
-1. ui_start：轻快上扬启动音，0.3秒左右。
-2. ui_tap：柔和点击音，0.1秒左右。
-3. ui_select：选项确认音，0.15秒左右，比点击更明亮。
-4. piece_move：方块左右移动短 blip，0.08秒左右。
-5. piece_blocked：无效移动提示，柔和低音，0.12秒左右。
-6. piece_soft_drop：短促下坠 whoosh，0.18秒左右。
-7. piece_lock：方块落地固定音，0.12秒左右。
-8. piece_merge：同级方块合成，上扬 sparkle，0.25秒左右。
-9. line_clear：整行消除，明亮扫过音，0.4秒左右。
-10. game_win：简短胜利 jingle，1秒左右。
-11. game_over：柔和下行失败音，0.8秒左右。
+需要生成 9 个文件，文件名必须和 key 一致：
+
+1. ui_start：启动游戏/开始按钮音，0.24到0.36秒。轻快上扬，温暖、简短，尾音不要超过0.36秒，避免和开局方块音重叠。
+2. ui_tap：普通按钮点击音，0.05到0.10秒。非常短、柔和、低音量，适合频繁点击，不要尖锐高频。
+3. ui_select：选项切换确认音，0.09到0.16秒。比 ui_tap 更明亮，有轻微上扬，表达“选择已生效”。
+4. next_drop：顶部预览条转变为下落方块的声音，对齐260ms动画，0.22到0.30秒。声音从细窄的闪光/能量条开始，快速收束成一个轻微落点，主变化必须在前260ms内完成。
+5. piece_move：方块左右移动成功音，0.04到0.08秒。极短 blip 或滑动 tick，干净、轻、无拖尾，适合连续快速播放。
+6. piece_merge：同等级方块合成音，对齐140ms合成动画，0.12到0.18秒。清脆上扬，带少量 sparkle，峰值在80到120ms之间，表现升级奖励感。
+7. line_clear：整行消除音，对齐220ms消除动画，0.20到0.28秒。明亮横向扫过感，前段清晰，尾部快速淡出，不要长混响。
+8. game_win：胜利音，0.85到1.20秒。简短明亮 jingle，积极但克制，不要做成长旋律，不要有鼓点循环。
+9. game_over：失败音，0.65到0.95秒。柔和下行，低压但不惊吓，不要刺耳，不要恐怖氛围。
 ```
 
 ## 8. 代码接入建议
@@ -153,13 +155,10 @@ assets/audio/
 3. 将核心事件映射到音效：
 
 ```text
-spawn -> piece_spawn，可选
+spawn -> next_drop
 move -> piece_move
-lock -> piece_lock
 merge -> piece_merge
 lineClear -> line_clear
-pause(reason === "manual") -> game_pause
-resume(reason === "manual") -> game_resume
 won -> game_win
 gameOver -> game_over
 ```
@@ -172,12 +171,7 @@ mode/qscore/cols/speed/tab -> ui_select
 continue/restart/exit/settings/backdrop -> ui_tap
 ```
 
-5. 左右移动失败需要调整现有调用方式：
-
-```text
-const moved = dx < 0 ? game.moveLeft() : game.moveRight();
-if (!moved) sound.play("piece_blocked");
-```
+5. `next_drop` 建议只在顶部条实际 morph 为下落方块时播放；如果第一颗方块没有顶部条 morph，可跳过第一局第一次 `spawn` 的 `next_drop`，避免声音和画面不一致。
 
 ## 9. 音效播放规则
 
@@ -186,8 +180,8 @@ if (!moved) sound.play("piece_blocked");
 - 连续多个 `merge` 可有两种方案：
   - 第一版：每个结算周期只播放一次 `piece_merge`。
   - 进阶版：按连锁次数播放不同 pitch 的变体。
-- `piece_lock` 和 `piece_merge` 同时出现时，优先播放 `piece_merge`，避免落地音抢合成反馈。
 - `piece_move` 高频播放时必须有冷却时间。
+- `next_drop` 应对齐 260ms morph 过程，不能晚于方块开始正常下落后再播放。
 - 静音设置应影响所有音效。
 
 ## 10. 验收标准
@@ -196,8 +190,8 @@ if (!moved) sound.play("piece_blocked");
 
 - 首页开始、设置页开始、设置选项切换都有明确反馈。
 - 左右移动成功只播放 `piece_move`，失败不误播成功音。
-- 下滑加速只在手势触发时播放一次。
-- 普通落地、合成、整行消除能被听觉区分。
+- 顶部条变成下落方块时播放 `next_drop`，且听感与 260ms morph 动画同步。
+- 合成、整行消除能被听觉区分，并分别贴合 140ms 与 220ms 动画。
 - 胜利和失败音效只播放一次，不因 render 或 snapshot 重复播放。
 - 切到后台不会突然播放音效，回到前台不会补播旧事件。
 - 静音开关可立即生效。
@@ -206,10 +200,9 @@ if (!moved) sound.play("piece_blocked");
 ## 11. 推荐实施顺序
 
 1. 建立 `sound-map.js` 和 `sound-manager.js`。
-2. 使用临时占位音效接入 UI 点击、移动、落地、合成、消除、胜利、失败。
+2. 使用临时占位音效接入 UI 点击、选项切换、`next_drop`、移动、合成、消除、胜利、失败。
 3. 在 `refresh()` 或主循环里做事件去重和事件到音效的映射。
 4. 增加静音设置，优先做全局开关，音量滑杆可后置。
 5. 替换为正式音效素材。
 6. 真机测试微信小游戏环境下的延迟、重叠、后台恢复表现。
 7. 根据真机听感调整每个 key 的默认音量和冷却时间。
-

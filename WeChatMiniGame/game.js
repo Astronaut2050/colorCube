@@ -3,6 +3,7 @@ import { createCanvasRenderer } from './src/renderers/canvas-renderer.js';
 import { createGameLifecycle } from './src/platforms/wechat/lifecycle.js';
 import { DEFAULT_GAME_OPTIONS, GAME_NAME, COLUMN_OPTIONS, SPEED_OPTIONS } from './src/shared/constants.js';
 import { pickTheme } from './src/shared/themes.js';
+import { createSoundManager } from './src/audio/sound-manager.js';
 
 // ====== Canvas setup ======
 const canvas = wx.createCanvas();
@@ -39,6 +40,11 @@ let settingsFromGame = false;
 let useCustomQuickScore = false;
 let customQuickScore = '30';
 let customScoreInputActive = false;
+const sound = createSoundManager();
+let playedEventKeys = new Set();
+let terminalSoundPlayed = false;
+
+sound.preload();
 
 // ====== Utility functions ======
 function now() {
@@ -172,6 +178,69 @@ function hitTest(tx, ty) {
     }
   }
   return null;
+}
+
+function eventAudioKey(event) {
+  const from = event.from ? `${event.from.x},${event.from.y}` : '';
+  const to = event.to ? `${event.to.x},${event.to.y}` : '';
+  const piece = event.piece ? `${event.piece.x},${event.piece.y},${event.piece.level}` : '';
+  return `${event.at || 0}:${event.type}:${from}:${to}:${piece}:${event.y ?? ''}:${event.level ?? ''}`;
+}
+
+function resetAudioEvents(snapshotToMark = snapshot) {
+  playedEventKeys = new Set((snapshotToMark.events || []).map(eventAudioKey));
+  terminalSoundPlayed = false;
+}
+
+function rememberAudioEvent(event) {
+  playedEventKeys.add(eventAudioKey(event));
+  if (playedEventKeys.size > 80) {
+    playedEventKeys = new Set(Array.from(playedEventKeys).slice(-40));
+  }
+}
+
+function playGameEventSounds(nextSnapshot) {
+  const newEvents = [];
+  (nextSnapshot.events || []).forEach((event) => {
+    const key = eventAudioKey(event);
+    if (playedEventKeys.has(key)) {
+      return;
+    }
+    rememberAudioEvent(event);
+    newEvents.push(event);
+  });
+
+  if (!newEvents.length) {
+    return;
+  }
+
+  const hasTerminal = newEvents.some((event) => event.type === 'won' || event.type === 'gameOver');
+  if (!hasTerminal && newEvents.some((event) => event.type === 'spawn')) {
+    sound.play('next_drop');
+  }
+  if (newEvents.some((event) => event.type === 'move')) {
+    sound.play('piece_move');
+  }
+  if (
+    newEvents.some((event) => event.type === 'lock')
+    && !newEvents.some((event) => event.type === 'merge' || event.type === 'lineClear')
+  ) {
+    sound.play('piece_lock');
+  }
+  if (newEvents.some((event) => event.type === 'merge')) {
+    sound.play('piece_merge');
+  }
+  if (newEvents.some((event) => event.type === 'lineClear')) {
+    sound.play('line_clear');
+  }
+
+  if (!terminalSoundPlayed) {
+    const terminalEvent = newEvents.find((event) => event.type === 'won' || event.type === 'gameOver');
+    if (terminalEvent) {
+      terminalSoundPlayed = true;
+      sound.play(terminalEvent.type === 'won' ? 'game_win' : 'game_over');
+    }
+  }
 }
 
 // ====== Screen Renderers ======
@@ -539,10 +608,10 @@ function drawGameScreen() {
     ctx.fillStyle = 'rgba(29, 38, 44, 0.5)';
     ctx.fill();
 
-    const popW = Math.min(360, Math.max(260, overlayW - 72));
-    const popH = 178;
+    const popW = Math.min(340, Math.max(260, overlayW - 92));
+    const popH = 206;
     const popX = overlayX + (overlayW - popW) / 2;
-    const popY = overlayY + Math.max(82, Math.floor((overlayH - popH) * 0.42));
+    const popY = overlayY + Math.max(96, Math.floor((overlayH - popH) * 0.4));
     drawRoundedRect(ctx, popX, popY, popW, popH, 24);
     ctx.fillStyle = 'rgba(248, 243, 235, 0.96)';
     ctx.fill();
@@ -552,7 +621,7 @@ function drawGameScreen() {
     ctx.font = '700 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(title, popX + popW / 2, popY + 38);
+    ctx.fillText(title, popX + popW / 2, popY + 42);
 
     if (snapshot.status === 'won') {
       const secs = Math.floor(snapshot.elapsedMs / 1000);
@@ -560,17 +629,17 @@ function drawGameScreen() {
       ctx.fillStyle = '#756c64';
       ctx.font = '500 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
       ctx.fillText(`用时 ${String(mins).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`,
-        popX + popW / 2, popY + 68);
+        popX + popW / 2, popY + 74);
     } else {
       ctx.fillStyle = '#756c64';
       ctx.font = '500 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-      ctx.fillText('方块已经堆到顶部', popX + popW / 2, popY + 68);
+      ctx.fillText('方块已经堆到顶部', popX + popW / 2, popY + 74);
     }
 
-    const actionX = popX + 22;
-    const actionW = popW - 44;
-    const restartY = popY + 88;
-    const exitY = restartY + 50;
+    const actionX = popX + 24;
+    const actionW = popW - 48;
+    const restartY = popY + 104;
+    const exitY = restartY + 54;
     addTouchBtn('restart', { x: actionX, y: restartY, w: actionW, h: 44 });
     drawButtonSolid('重新开始', actionX, restartY, actionW, 44, 22,
       '#8f9f88', '#faf7f2', 18);
@@ -849,6 +918,7 @@ function cancelFrame(handle) {
 function refresh() {
   const nextSnapshot = game.getSnapshot();
   snapshot = nextSnapshot;
+  playGameEventSounds(nextSnapshot);
   return nextSnapshot;
 }
 
@@ -895,10 +965,12 @@ function handleTouchStart(e) {
     if (snapshot.status === 'won' || snapshot.status === 'gameOver') {
       const btn = hitTest(tx, ty);
       if (btn === 'restart') {
+        sound.play('ui_tap');
         handleRestart();
         return;
       }
       if (btn === 'exit_game') {
+        sound.play('ui_tap');
         handleExit();
         return;
       }
@@ -908,6 +980,7 @@ function handleTouchStart(e) {
     // Check settings button
     const btn = hitTest(tx, ty);
     if (btn === 'settings_game') {
+      sound.play('ui_tap');
       handleOpenSettings();
       return;
     }
@@ -922,8 +995,10 @@ function handleTouchStart(e) {
   if (currentScreen === 'home') {
     const btn = hitTest(tx, ty);
     if (btn === 'start') {
+      sound.play('ui_start');
       goToSetup();
     } else if (btn === 'settings_controls') {
+      sound.play('ui_tap');
       currentScreen = 'settings';
       settingsTab = 'controls';
       settingsFromGame = false;
@@ -958,10 +1033,13 @@ function handleTouchEnd(e) {
     const threshold = 24;
 
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
-      if (dx < 0) game.moveLeft();
-      else game.moveRight();
+      const moved = dx < 0 ? game.moveLeft() : game.moveRight();
+      if (!moved) {
+        sound.play('piece_blocked');
+      }
     } else if (dy > threshold && Math.abs(dy) >= Math.abs(dx)) {
       game.softDropStart();
+      sound.play('piece_soft_drop');
     }
 
     touchStartPoint = null;
@@ -975,50 +1053,59 @@ function handleSetupTouch(tx, ty) {
   if (!btn) return;
 
   if (btn === 'mode_endless') {
+    sound.play('ui_select');
     settings.mode = 'endless';
     render();
     return;
   }
   if (btn === 'mode_quick') {
+    sound.play('ui_select');
     settings.mode = 'quick';
     render();
     return;
   }
   if (btn === 'qscore_10') {
+    sound.play('ui_select');
     useCustomQuickScore = false;
     settings.quickTargetScore = 10;
     render();
     return;
   }
   if (btn === 'qscore_25') {
+    sound.play('ui_select');
     useCustomQuickScore = false;
     settings.quickTargetScore = 25;
     render();
     return;
   }
   if (btn === 'qscore_custom') {
+    sound.play('ui_select');
     useCustomQuickScore = true;
     settings.quickTargetScore = parseInt(customQuickScore, 10) || 30;
     render();
     return;
   }
   if (btn === 'qscore_input') {
+    sound.play('ui_tap');
     openCustomScoreInput();
     return;
   }
   if (btn.startsWith('cols_')) {
+    sound.play('ui_select');
     const cols = parseInt(btn.split('_')[1]);
     settings.cols = cols;
     render();
     return;
   }
   if (btn.startsWith('speed_')) {
+    sound.play('ui_select');
     const speed = parseInt(btn.split('_')[1]);
     settings.speedMultiplier = speed;
     render();
     return;
   }
   if (btn === 'start_game') {
+    sound.play('ui_start');
     startNewGame();
     return;
   }
@@ -1067,6 +1154,7 @@ function handleSettingsTouch(tx, ty) {
   if (!btn) return;
 
   if (btn === 'settings_backdrop') {
+    sound.play('ui_tap');
     if (settingsFromGame) {
       continueGame();
     } else {
@@ -1081,20 +1169,24 @@ function handleSettingsTouch(tx, ty) {
   }
 
   if (btn === 'tab_rules') {
+    sound.play('ui_select');
     settingsTab = 'rules';
     render();
     return;
   }
   if (btn === 'tab_controls') {
+    sound.play('ui_select');
     settingsTab = 'controls';
     render();
     return;
   }
   if (btn === 'continue') {
+    sound.play('ui_tap');
     continueGame();
     return;
   }
   if (btn === 'restart_home') {
+    sound.play('ui_tap');
     currentScreen = 'setup';
     settingsFromGame = false;
     stopLoop();
@@ -1114,6 +1206,7 @@ function startNewGame() {
   stopLoop();
   game.start({ ...settings });
   snapshot = game.getSnapshot();
+  resetAudioEvents(snapshot);
   setupGameCanvas();
   render();
   startLoop();
@@ -1182,6 +1275,7 @@ wx.onShow(() => {
 
 wx.onHide(() => {
   lifecycle.handleHide();
+  sound.stopAll();
   stopLoop();
 });
 
